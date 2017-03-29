@@ -1,0 +1,16 @@
+setConstructorS3("CrossoverOX",function()
+           {
+             extend(Crossover(),"CrossoverOX")
+  
+           }
+           )
+
+setMethodS3("run","Crossover", function(this,male = NULL,female = NULL,...) {
+ 
+})
+
+
+
+
+
+

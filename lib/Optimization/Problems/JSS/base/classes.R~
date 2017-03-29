@@ -1,0 +1,294 @@
+library("R.oo")
+
+setConstructorS3("Instance",function()
+           {
+                         
+             extend(JSS(),"Instance",
+                    nrMachines = NULL,
+                    nrJobs = NULL,
+                    randomFeatures = list(),
+                    name = "",
+                    idDBOperations = NULL,
+                    duration = NULL,
+                    precedence = NULL,
+                    machines = NULL)
+             
+  
+           }
+           )
+
+
+
+setMethodS3("DBsetInstance","Instance", function(this,con=NULL,...) {
+
+  q1 <- paste("INSERT INTO Instance(name,source) VALUES (\"",this$name,"\",\"",this$source,"\")",sep="")
+  sol1 <- dbGetQuery(con,q1)
+
+  a <- dbGetQuery(con,"SELECT LAST_INSERT_ID()")
+  instanceID <- a[1,"LAST_INSERT_ID()"]
+
+  
+  
+  for(j in 1:this$nrJobs())
+    {
+      for(m in 1:this$nrMachines())
+        {
+          dbGetQuery(con,paste("INSERT INTO Operation(machine,job,Instance_id,duration,precedence) VALUES (",m,",",j,",",instanceID,",",this$getDuration(j,m),",",this$getPrecedence(j,m),")",sep=""))
+
+          a <- dbGetQuery(con,"SELECT LAST_INSERT_ID()")
+          operationID <- a[1,"LAST_INSERT_ID()"]
+
+          this$idDBOperations[j,m] <- operationID 
+          
+        }
+    }
+  instanceID
+})
+
+setMethodS3("DBgetInstance","Instance", function(this,id = NULL,con=NULL,...) {
+
+
+  if(!is.null(id))
+    {
+      this$idDB <- id
+
+      
+      
+      q1 <- paste("SELECT * FROM Instance WHERE id=",id,sep="")
+      sol1 <- dbGetQuery(con,q1)
+
+      this$name <- sol1[1,"name"]
+      this$source <- sol1[1,"source"]
+      
+      
+      q <- paste("SELECT * FROM Operation WHERE Instance_id=",id,sep="")
+      sol <- dbGetQuery(con,q)
+
+      nrJobs <- max(sol[,"job"])
+      nrMachines <- max(sol[,"machine"])
+
+      this$precedence <- array(dim=c(nrJobs,nrMachines))
+      this$idDBOperations <- array(dim=c(nrJobs,nrMachines))
+      this$duration <- array(dim=c(nrJobs,nrMachines))
+      
+      this$nrMachines <- nrMachines
+      this$nrJobs <- nrJobs
+            
+      for(i in 1:(dim(sol)[1]))
+        {
+          this$setDuration(sol[i,"duration"],sol[i,"job"],sol[i,"machine"])
+          this$setPrecedence(sol[i,"precedence"],sol[i,"job"],sol[i,"machine"])
+          this$idDBOperations[sol[i,"job"],sol[i,"machine"]] <- sol[i,"id"]
+        }
+      
+      
+    }
+
+})
+
+
+
+setMethodS3("random.instance","Instance", function(this,
+                                                   nr.jobs = 10,
+                                                   nr.machines = 10,
+                                                   correlation = "no",
+                                                   same.job.same.dist = FALSE,
+                                                   minDuration=1,
+                                                   maxDuration=99,
+                                                   parameter.1.int =c(1,1),
+                                                   parameter.2.int =c(1,1),
+                                                   order.parameter = 99999999999,
+                                                   seed = round(runif(1,min=1,max=999999999)),
+                                                   instance.name=paste(Sys.time(),"-",seed),...) {
+
+   set.seed(seed)
+  
+  #######################################################################
+
+
+   duration.int=c(minDuration,maxDuration)
+
+
+   
+  order <- array(dim=c(nr.jobs,nr.machines))
+  order.number <- trunc(runif(nr.jobs,max = order.parameter))
+ 
+  for(j in 1:nr.jobs)
+    {
+
+      if(j > 1 & any(order.number[j]==order.number[1:(j-1)]))
+        {
+          order[j,] <- order[which(order.number[j]==order.number[1:(j-1)])[1],] 
+        }
+      else
+        {
+          order[j,] <- sample(1:nr.machines)
+        }
+    }
+  
+  ########################################################################
+  
+  duration <- array(dim=c(nr.jobs,nr.machines))
+  all.parameter.1 <- NULL
+  all.parameter.2 <- NULL
+  
+  if(correlation=="job")
+    {
+      all.parameter.1 <- runif(nr.jobs,min = parameter.1.int[1],max = parameter.1.int[2])
+      all.parameter.2 <- runif(nr.jobs,min = parameter.2.int[1],max = parameter.2.int[2])
+
+      for(j in 1:nr.jobs)
+        {
+          if(j > 1 & any(order.number[j] == order.number[1:(j-1)]) & same.job.same.dist)
+            {
+              same.j <- which(order.number[j]==order.number[1:(j-1)])[1]
+              values <- rbeta(nr.machines,all.parameter.1[same.j],all.parameter.2[same.j])
+              duration[j,] <- trunc(duration.int[1] + duration.int[2]*values)                       
+            }
+          else
+            {
+              values <- rbeta(nr.machines,all.parameter.1[j],all.parameter.2[j])
+              duration[j,]<- trunc(duration.int[1] + duration.int[2]*values)
+              
+            }
+        } 
+    }
+  
+  if(correlation=="machine")
+    {
+      
+      all.parameter.1 <- runif(nr.machines,min = parameter.1.int[1],max = parameter.1.int[2])
+      all.parameter.2 <- runif(nr.machines,min = parameter.2.int[1],max = parameter.2.int[2])
+
+      for(m in 1:nr.machines)
+        {
+          values <- rbeta(nr.jobs,all.parameter.1[m],all.parameter.2[m])
+          duration[,m]<- trunc(duration.int[1] + duration.int[2]*values)
+         
+        }
+    }
+  
+  if(correlation=="no")
+    {
+      all.parameter.1 <- runif(1,min = parameter.1.int[1],max = parameter.1.int[2])
+      all.parameter.2 <- runif(1,min = parameter.2.int[1],max = parameter.2.int[2])
+
+      values <- rbeta(nr.jobs*nr.machines,all.parameter.1,all.parameter.2)
+      duration <- array(trunc(duration.int[1] + duration.int[2]*values),dim=c(nr.jobs,nr.machines))
+      
+    }
+
+
+   this$name <- instance.name
+   this$randomFeatures <-   list(seed = seed,
+                                  nr.machines = nr.machines,
+                                  nr.jobs = nr.jobs,
+                                  correlation = correlation,
+                                  same.job.same.dist = same.job.same.dist,
+                                  parameter.1.int = parameter.1.int,
+                                  parameter.2.int = parameter.2.int,
+                                  parameter.beta.1 =  all.parameter.1,
+                                  parameter.beta.2 =  all.parameter.2,
+                                  order.parameter = order.parameter)    
+   this$duration <- duration
+   this$precedence <- order
+   this$idDBOperations <- array(dim=c(nr.jobs,nr.machines))
+
+})
+
+
+
+setMethodS3("nrMachines","Instance", function(this,...) {
+  d <- dim(this$duration)
+  
+  return(d[2]) 
+})
+
+setMethodS3("nrJobs","Instance", function(this,...) {
+  d <- dim(this$duration)
+  
+  return(d[1]) 
+})
+
+
+setMethodS3("getDuration","Instance", function(this,jobID = NA,machineID = NA,...) {
+  return(this$duration[jobID,machineID])
+})
+
+setMethodS3("getPrecedence","Instance", function(this,jobID = NA,machineID = NA,...) {
+  return(this$precedence[jobID,machineID]) 
+})
+
+setMethodS3("setDuration","Instance", function(this,duration= NA,jobID = NA,machineID = NA,...) {
+  this$duration[jobID,machineID] <- duration
+})
+
+setMethodS3("setPrecedence","Instance", function(this,precedence=NA,jobID = NA,machineID = NA,...) {
+  this$precedence[jobID,machineID] <- precedence
+})
+
+setMethodS3("getMachine","Instance", function(this,jobID = NA,precedence = NA,...) {
+
+  if(this$machine == NULL)
+    {
+      this$machine <- t(apply(this$precedence, 1, order))
+    }
+
+  
+  return(this$machine[jobID,precedence])
+})
+
+
+setMethodS3("getOperation","Instance", function(this,machineID = NA,jobID = NA,...) {
+
+ 
+  operation <- Operation(machineID,jobID,this$getPrecedence(jobID,machineID),this$getDuration(jobID,machineID))
+    
+
+  
+  return(operation)
+})
+
+setMethodS3("getOperationSameMachine","Instance", function(this,machineID = NA,...) {
+
+  operations <- list()
+
+  for(i in 1:this$nrJobs())
+    {
+      
+      operations[[i]] <- Operation(machineID,i,this$getPrecedence(i,machineID),this$getDuration(i,machineID))
+    }
+
+  
+  return(operations)
+})
+
+setMethodS3("getOperationSameJob","Instance", function(this,jobID = NA,...) {
+
+  operations <- list()
+
+  for(i in 1:this$nrMachines())
+    {
+      operations[[i]] <- Operation(i,jobID,this$getPrecedence(jobID,i),this$getDuration(jobID,i))
+    }
+
+  
+  return(operations)
+})
+
+setMethodS3("getOperationSamePrecedence","Instance", function(this,precedence = NA,...) {
+
+   operations <- NULL
+
+  for(i in 1:this$nrJobs())
+    {
+      machineID <- this$getMachine(i,precedence)    
+      
+      operations[i] <- Operation(machineID,i,precedence,this$getDuration(i,machineID))
+    }
+
+  
+  return(operations)
+})
+
+

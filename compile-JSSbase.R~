@@ -1,0 +1,20 @@
+library("R.oo")
+##library("RMySQL")
+
+
+rm(list = ls())
+version <- "dev"
+homePath <- paste("./lib/",version,"/Optimization/Problems/JSS/base/",sep="")
+
+source(paste(homePath,"GTHeuristic.R",sep=""))
+source(paste(homePath,"Instance.R",sep=""))
+source(paste(homePath,"JSS.R",sep=""))
+source(paste(homePath,"PriorityList.R",sep=""))
+source(paste(homePath,"Operation.R",sep=""))
+source(paste(homePath,"PartialPriorityList.R",sep=""))
+source(paste(homePath,"Rule.R",sep=""))
+source(paste(homePath,"Schedule.R",sep=""))
+
+package.skeleton("JSSbase")
+
+

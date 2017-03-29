@@ -1,0 +1,293 @@
+library("R.oo")
+
+
+
+setMethodS3("setInstance","Schedule", function(this,instance,...) {
+
+  this$instance <- instance
+
+  
+  this$idDBOperationsStartTime <- array(dim=c(instance$nrJobs(),instance$nrMachines()))
+
+this$operationStartTime <- array(0,dim=c(instance$nrJobs(),instance$nrMachines()))
+  
+  
+  
+})
+
+
+
+setMethodS3("DBsetSchedule","Schedule", function(this,con,...) {
+
+
+  inst <- this$instance
+  instanceID <- NULL
+  
+  if(is.null(inst$idDB))
+    {
+    
+     instanceID <- inst$DBsetInstance(con) 
+    }
+  else
+    {
+      instanceID <- inst$idDB
+
+    }
+
+  q1 <- paste("INSERT INTO Schedule(Instance_id) VALUES (",instanceID,")",sep="")
+ 
+  sol1 <- dbGetQuery(con,q1)
+
+  a <- dbGetQuery(con,"SELECT LAST_INSERT_ID()")
+  scheduleID <- a[1,"LAST_INSERT_ID()"]
+
+for(j in 1:inst$nrJobs())
+    {
+      for(m in 1:inst$nrMachines())
+        {
+
+          st <- this$getOperationStartTime(j,m)
+
+          
+          dbGetQuery(con,paste("INSERT INTO Schedule_Operation(start_time,Operation_id,Schedule_id) VALUES (",st,",",inst$idDBOperations[j,m],",",scheduleID,")",sep=""))
+
+          a <- dbGetQuery(con,"SELECT LAST_INSERT_ID()")
+          operationSTID <- a[1,"LAST_INSERT_ID()"]
+
+          this$idDBOperationsStartTime[j,m] <- operationSTID 
+          
+        }
+    }
+
+  
+  scheduleID
+  
+})
+
+
+setMethodS3("DBgetSchedule","Schedule", function(this,id = NULL,con,...) {
+
+  if(!is.null(id))
+    {
+      
+      this$idDB <- id
+      q <- paste("SELECT * FROM Schedule WHERE id=",id,sep="")
+      sol <- dbGetQuery(con,q)
+
+      inst <- Instance()
+      inst$DBgetInstance(sol[1,"Instance_id"],con)
+      this$instance <- inst  
+      
+      this$idDBOperationsStartTime <- array(dim=c(inst$nrJobs(),inst$nrMachines()))
+      
+      this$operationStartTime <- array(dim=c(inst$nrJobs(),inst$nrMachines()))
+      
+     
+      q2 <- paste("SELECT * FROM Schedule_Operation WHERE Schedule_id=",id,sep="")
+      sol2 <- dbGetQuery(con,q2)
+
+      
+      for(i in 1:(dim(sol2)[1]))
+        {
+          jobANDmachine <- which(inst$idDBOperations == sol2[i,"Operation_id"],arr.ind = TRUE)
+          st <- sol2[i,"start_time"]
+          job <- jobANDmachine[1]
+          machine <- jobANDmachine[2]
+          
+          this$idDBOperationsStartTime[job,machine] <- sol2[i,"id"]
+          this$setOperationStartTime(job,machine,st)       
+        } 
+      
+    }
+
+
+
+  
+})
+
+
+
+
+
+
+
+setMethodS3("setOperationStartTime","Schedule", function(this,jobID = NA,machineID = NA,start = 0,...) {
+  this$operationStartTime[jobID,machineID]<-start 
+})
+
+
+setMethodS3("getOperationStartTime","Schedule", function(this,jobID = NA,machineID = NA,...) {
+  return(this$operationStartTime[jobID,machineID]) 
+})
+
+
+
+
+setMethodS3("GT","Schedule", function(this,GTheuristic = NULL,...) {
+
+  inst <- this$instance
+  
+##  GTheuristic$schedule <- this
+  
+  problem <- list(nr.machines = inst$nrMachines(),
+                  nr.jobs = inst$nrJobs(),
+                  times = inst$duration,
+                  order = inst$precedence)
+  
+  nr.machines<-problem$nr.machines
+  nr.jobs<-problem$nr.jobs
+  ##Structure of the matrix jobs is:
+  ##(jobs,operation[or order],(start time,duration,order[if operation in index before],operation[if order in index before])) 
+  jobs<-array(dim=c(nr.jobs,nr.machines,4))
+  ##Insert duration of operations
+  jobs[,,2]<-problem$times
+  ##Insert order of operations
+  jobs[,,3]<-problem$order
+ 
+  ##inserted inv.
+  jobs[,,4]<- t(apply(jobs[,,3], 1, order))
+ 
+  jobs[which(is.na(jobs[,,3]),arr.ind = TRUE)[1],nr.machines,4] <- NA
+  
+  cut<-jobs[,1,4]
+  
+  ##Insert initial operation all in time 0
+  for(i in 1:nr.jobs)
+    {
+      jobs[i,jobs[i,1,4],1]<-0
+    }
+  
+  
+  smallest.ct<-apply(jobs[,,1]+jobs[,,2], 1, max,na.rm=TRUE)
+  operation.order.scheduled<-array(1,dim=nr.jobs)
+  job.scheduled<-NULL
+  sched<-TRUE
+  number.machines <- rep(problem$nr.machines,nr.jobs)
+  
+  ##Begin scheduling
+   while(!all(is.na(cut))){
+    print("-------------------------\n") 
+    min.value<-min(smallest.ct,na.rm=TRUE)
+    print(min.value)
+    job.with.smallest.ct<-which(smallest.ct==min.value)
+    print(job.with.smallest.ct)
+    machine.with.min.ct<-cut[job.with.smallest.ct[1]] # If several jobs finish at the same time, chooses the first one randomly
+    jobs.with.conflict <-which(jobs[,machine.with.min.ct,1] < min.value & min.value <= (jobs[,machine.with.min.ct,1]+jobs[,machine.with.min.ct,2]))
+    print(jobs.with.conflict)
+    
+    if (length(jobs.with.conflict) > 1)
+      {
+        operations <- list()
+
+        for(j in 1:length(jobs.with.conflict))
+          {
+            operations[[j]] <- inst$getOperation(machine.with.min.ct,jobs.with.conflict[j])
+
+          }
+
+        
+        choose.priority <- GTheuristic$selectOperationIndex(operations,this)
+        print(paste("choose.priority:",choose.priority,"\n"))
+        
+        ##heuristic.value.job.with.conflict <- eval(call(discriminant.heuristic[machine.with.min.ct],jobs.with.conflict,machine.with.min.ct,jobs))
+       ## choose.priority <-  which.min(abs(heuristic.value.job.with.conflict - eval(call(selection.function,heuristic.value.job.with.conflict))))[1]                        
+        priority.of.conflict.jobs.for.machine <- c(jobs.with.conflict[choose.priority],jobs.with.conflict[-choose.priority])
+        
+        ##Resolve conflict in machine
+      jobs[priority.of.conflict.jobs.for.machine[-1], machine.with.min.ct, 1] <-
+        jobs[priority.of.conflict.jobs.for.machine[1],machine.with.min.ct,1] + jobs[priority.of.conflict.jobs.for.machine[1],machine.with.min.ct,2]
+        
+        smallest.ct[priority.of.conflict.jobs.for.machine[-1]] <-
+          jobs[priority.of.conflict.jobs.for.machine[-1], machine.with.min.ct, 1]+jobs[priority.of.conflict.jobs.for.machine[-1], machine.with.min.ct, 2]
+      
+      }
+    
+    ##There aren't any conflicts so the job to schedule is the one with minor completation time
+    else
+      {
+        job.scheduled<-job.with.smallest.ct[1]
+        if(is.na(operation.order.scheduled[job.scheduled]))
+          {
+            browser()
+
+          }
+        if(operation.order.scheduled[job.scheduled] < number.machines[job.scheduled]){
+          ##Remove scheduled task from cut set
+          operation.order.scheduled[job.scheduled]<-operation.order.scheduled[job.scheduled] + 1
+
+
+          st <- jobs[job.scheduled,jobs[job.scheduled,(operation.order.scheduled[job.scheduled]-1),4],2]+
+            jobs[job.scheduled,jobs[job.scheduled,(operation.order.scheduled[job.scheduled]-1),4],1]
+          ##Insert next operation
+          jobs[job.scheduled,jobs[job.scheduled,operation.order.scheduled[job.scheduled],4],1]<- st
+
+          this$setOperationStartTime(job.scheduled,jobs[job.scheduled,operation.order.scheduled[job.scheduled],4],st)
+          
+          smallest.ct[job.scheduled]<-max(jobs[job.scheduled,,1]+jobs[job.scheduled,,2],na.rm=TRUE)
+          
+          cut[job.scheduled]<-jobs[job.scheduled,operation.order.scheduled[job.scheduled],4]
+        }
+        else
+          {
+            cut[job.scheduled]<-NA
+            smallest.ct[job.scheduled]<-NA
+          }
+      }
+  }
+  
+  jobs
+
+  this$operationStartTime <- jobs[,,1]
+  
+})
+
+setMethodS3("makespan","Schedule", function(this,...) {
+
+  inst <- this$instance
+  endTime <- this$operationStartTime + inst$duration
+  
+  max(apply(endTime,1,function(job){max(job,na.rm=TRUE)}))
+
+})
+  
+setMethodS3("plotJobsGanttChart","Schedule", function(this,path=NULL,...) {
+
+  inst <- this$instance
+  
+  problem <- list(nr.machines = inst$nrMachines(),
+                  nr.jobs = inst$nrJobs(),
+                  times = inst$duration,
+                  order = inst$precedence)
+
+  nr.machines<-problem$nr.machines
+  nr.jobs<-problem$nr.jobs
+ 
+  ##Structure of the matrix jobs is:
+  ##(jobs,operation[or order],(start time,duration,order[if operation in index before],operation[if order in index before])) 
+  jobs<-array(dim=c(nr.jobs,nr.machines,4))
+  ##Insert duration of operations
+  jobs[,,1]<-this$operationStartTime
+  jobs[,,2]<-problem$times
+  ##Insert order of operations
+  jobs[,,3]<-problem$order
+
+  mspan<-this$makespan()
+  plot(c(0,0),c(1,nr.jobs+0.5),t="l",xlim=c(0,mspan),xlab="time",ylab="Jobs")
+  for(job in 1:nr.jobs){
+    for(operation in 1:nr.machines){
+      in.critical.path <- any(path[which(path[,1] == job),2] == operation) 
+      text(jobs[job,operation,1],job+0.2,operation)
+      
+      lines(c(jobs[job,operation,1],jobs[job,operation,2]+jobs[job,operation,1]),
+            c(job,job),lwd=7,lend=2,col=colours()[10*operation])
+
+     if(in.critical.path){
+        lines(c(jobs[job,operation,1],jobs[job,operation,2]+jobs[job,operation,1]),
+              c(job,job),lwd=2,col="yellow")}
+    }}
+  
+  
+  lines(c(mspan,mspan),c(1,nr.jobs+0.2))
+  text(mspan,nr.jobs+0.5,mspan)
+   
+})

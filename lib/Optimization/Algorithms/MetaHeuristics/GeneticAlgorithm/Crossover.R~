@@ -1,0 +1,12 @@
+setConstructorS3("Crossover",function()
+           {
+             extend(GAComponent(),"Crossover")
+  
+           }
+           )
+
+setMethodS3("run","Crossover", function(this,male = NULL,female = NULL,...) {
+  return male  
+})
+
+

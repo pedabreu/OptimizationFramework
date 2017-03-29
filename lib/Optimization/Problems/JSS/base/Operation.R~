@@ -1,0 +1,60 @@
+setConstructorS3("Operation",function(machineID = NA,jobID = NA,precedence = NA,duration= NA)
+           {
+             extend(JSS(),"Operation",
+                    machineID=machineID,
+                    jobID=jobID,
+                    precedence=precedence,
+                    duration=duration,
+                    scheduled=0,
+                    start=0)
+  
+           }
+           )
+
+setMethodS3("setStartTime","Operation", function(this,start = 0,...) {
+  this$start <- start
+})
+
+setMethodS3("getStartTime","Operation", function(this,...) {
+  return(this$start)
+})
+
+setMethodS3("setScheduled","Operation", function(this,...) {
+  this$scheduled = 1;
+})
+
+setMethodS3("getScheduled","Operation", function(this,...) {
+  return(this$scheduled)
+})
+
+setMethodS3("getMachineID","Operation", function(this,...) {
+  return(this$machineID)
+})
+
+setMethodS3("getJobID","Operation", function(this,...) {
+  return(this$jobID)
+})
+
+setMethodS3("getPrecedence","Operation", function(this,...) {
+  return(this$precedence)
+})
+
+setMethodS3("getDuration","Operation", function(this,...) {
+  return(this$duration)
+})
+
+setMethodS3("sameMachine","Operation", function(this,operation = NA,...) {
+  resultado <- FALSE
+  
+  if (inherits(operation, "Operation"))
+    {
+      if(operation$getMachine() == this$getMachine())
+        {
+          resultado <- TRUE
+        }
+    }
+  
+  return(resultado)
+})
+
+

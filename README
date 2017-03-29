@@ -1,0 +1,5 @@
+Correr o ficheiro run.sh definindo o numero de jobs a submeter. Por exemplo:
+
+Se quiser correr 10 jobs , fazer
+
+sh run.sh 10

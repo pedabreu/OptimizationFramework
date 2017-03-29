@@ -1,0 +1,9 @@
+> args <- commandArgs(trailingOnly = TRUE)
+> 
+> 
+> print(args)
+character(0)
+> 
+> proc.time()
+   user  system elapsed 
+  0.252   0.032   0.272 

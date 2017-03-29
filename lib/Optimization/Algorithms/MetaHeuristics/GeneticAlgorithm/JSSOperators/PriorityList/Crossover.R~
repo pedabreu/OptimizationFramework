@@ -1,0 +1,13 @@
+setConstructorS3("Crossover",function()
+           {
+             extend(GAComponent(),"Crossover",
+                     = NULL)
+  
+           }
+           )
+
+setMethodS3("run","Crossover", function(this,operations = NULL,schedule = NULL,...) {
+  
+})
+
+

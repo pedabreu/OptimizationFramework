@@ -1,0 +1,13 @@
+setConstructorS3("Mutation",function()
+           {
+             extend(GAComponent(),"Mutation")
+  
+           }
+           )
+
+
+
+setMethodS3("run","Mutation", function(this,chromosome= NULL,...) {
+  return chromosome
+  
+})

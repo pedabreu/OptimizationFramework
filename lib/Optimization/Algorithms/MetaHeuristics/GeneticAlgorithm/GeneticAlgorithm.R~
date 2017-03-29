@@ -1,0 +1,60 @@
+setConstructorS3("GeneticAlgorithm",function(instance = NULL,
+                                             seed = round(runif(1,min=1,max=999999999)),
+                                             stopCriterium = StopCriterium(),
+                                             population.size = 2,
+                                             chromosomeClass = "Chromosome",
+                                             crossoverOperator = Crossover(),
+                                             mutationOperator = Mutation(),
+                                             orderFunctionFitness = function(x){sort(x,index.return = TRUE)$ix},
+                                             elitistQuantity = 1,
+                                             ## elitistType - can be "relative" if elististQuantity is a percentage or "absolute" the exact number to select
+                                             elitistType = "absolute")
+           {
+             pop <- Population()
+             pop$instance <- instance
+             pop$chromosomeClass <- chromosomeClass
+             pop$crossoverOperator <- crossoverOperator
+             pop$mutationOperator <- mutationOperator
+             pop$orderFunctionFitness <- orderFunctionFitness 
+             pop$elitistQuantity <- elitistQuantity 
+             pop$elitistType <- elitistType 
+             
+             
+             extend(Object(),"GeneticAlgorithm",
+                    instance = instance,
+                    population.size = population.size, 
+                    population = pop,
+                    fitness = list(),
+                    stopCriterium = stopCriterium,
+                    mutation = mutation,
+                    crossover = crossover,
+                    seed = seed)
+  
+           }
+           )
+
+
+setMethodS3("run","GeneticAlgorithm", function(this,...) {
+
+  set.seed(this$seed)
+  
+  instance <- this$instance
+  population <- this$population
+  stopCrit <- this$stopCriterium
+
+  population$generateRandomParents(this$population.size)
+  
+  while(stopCrit$continue(population))
+    {
+      population$crossover()
+      population$mutation()
+      population$calculateAllFitness()
+      population$selection()
+      
+      population$increaseGeneration()
+    }
+
+  return(population) 
+  
+})
+

@@ -1,0 +1,31 @@
+setConstructorS3("PriorityList",function(priorityList = NULL)
+           {
+             extend(GTHeuristic(),"PriorityList",
+                    priorityList = priorityList)
+  
+           }
+           )
+
+setMethodS3("selectOperationIndex","PriorityList", function(this,operations=NULL,schedule = NULL,...) {
+  
+  firstOperation <- operations[[1]]
+  machine <- firstOperation$getMachineID()
+  
+  evaluation <- unlist(lapply(operations,function(x){job <- x$getJobID();which(this$priorityList[,machine] == job)}))
+  
+  choose.priority <-  which.min(evaluation)     
+  
+  return(choose.priority)
+})
+
+
+
+setMethodS3("randomGeneration","PriorityList", function(this,instance,...) {
+
+	nr.jobs<-instance$nrJobs()
+	nr.machines<-instance$nrMachines()
+      
+        this$priorityList <- apply(array(1:nr.jobs,dim=c(nr.jobs,nr.machines)),2,sample)
+
+})
+

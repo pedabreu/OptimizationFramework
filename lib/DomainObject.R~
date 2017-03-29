@@ -1,0 +1,25 @@
+setConstructorS3("MetaAlgorithm",function()
+           {
+             extend(JSS(),"Algorithm",
+                    idDB = NULL)
+  
+           }
+           )
+
+
+
+setMethodS3("run","GA", function(this,...) {
+
+  instance <- this$instance
+  nrJobs <- instance$nrJobs()
+  nrMachines <- instance$nrMachines()
+
+  initial.pop <- list()
+
+  for( i in 1:initial.nr.population)
+    {
+      ind <- eval(call(chromosomeClass))
+      initial.pop[[i]] <- ind$generateRandom()
+    }
+
+})

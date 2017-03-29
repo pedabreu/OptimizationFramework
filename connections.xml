@@ -1,0 +1,33 @@
+<connections>
+
+<connection name='rank'>
+<host>
+rank.inescporto.pt
+</host>
+<user>
+pedabreu
+</user>
+<password>
+pedabreu
+</password>
+<dbName>
+jss_dev
+</dbName>
+</connection>
+
+<connection name='localhost'>
+<host>
+localhost
+</host>
+<user>
+root
+</user>
+<password>
+pedabreu
+</password>
+<dbName>
+jss_dev
+</dbName>
+</connection>
+
+<connections>

@@ -1,0 +1,12 @@
+setConstructorS3("Chromosome",function()
+           {
+             extend(Object(),"Cromossome")
+  
+           }
+           )
+
+setMethodS3("generateRandom","Chromosome", function(this,...) {
+  
+})
+
+

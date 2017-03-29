@@ -1,0 +1,58 @@
+
+
+
+
+setMethodS3("randomGeneration","PartialPriorityList", function(this,
+                                                               instance,
+                                                               minListLength = 1,
+                                                               maxListLength = instance$nrJobs(),
+                                                               listLengthByMachine = round(runif(instance$nrMachines(),
+                                                                 min=minListLength,max = maxListLength)),
+                                                               ...) {
+
+
+  nr.machines<-instance$nrMachines()
+  nr.jobs<-instance$nrJobs()
+
+  for(m in 1:nr.machines)
+    {
+      this$priorityList[[m]] <- sample(1:nr.jobs,listLengthByMachine[m])
+    } 
+
+
+})
+
+
+setMethodS3("selectOperationIndex","PartialPriorityList", function(this,operations=NULL,schedule = NULL,...) {
+
+  firstOperation <- operations[[1]]
+  
+  machine <- firstOperation$getMachineID()
+  all.jobs <- unlist(lapply(operations,function(x){x$getJobID()}))
+
+  
+  pList <- this$priorityList[[machine]]
+ 
+  intersectionLists <- intersect(pList,all.jobs)
+  choose.priority <- 1
+  
+  if(length(intersectionLists)== length(all.jobs))
+    {
+      
+      evaluation <- unlist(lapply(operations,function(x){job <- x$getJobID();which(this$priorityList[,machine] == job)}))
+      choose.priority <-  which.min(evaluation) 
+    }
+  else
+    {
+      
+     ruleHeuristic <- this$defaultGTHeuristic
+     choose.priority <- ruleHeuristic$selectOperationIndex(operations,schedule)   
+    }
+
+
+  return(choose.priority)
+  
+})
+
+
+

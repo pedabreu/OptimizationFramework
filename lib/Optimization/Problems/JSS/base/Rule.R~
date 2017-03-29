@@ -1,0 +1,34 @@
+setConstructorS3("Rule",function(operationEvaluationFunction = function(operation){operation$getDuration()},
+                                            selectionFunction = "max")
+           {
+             extend(GTHeuristic(),"Rule",
+                    operationEvaluationFunction=operationEvaluationFunction,
+                    selectionFunction = selectionFunction)
+  
+           }
+           )
+
+setMethodS3("selectOperationIndex","Rule", function(this,operations=NULL,schedule = NULL,...) {
+ 
+  evaluation <- unlist(lapply(operations,this$operationEvaluationFunction))  
+  choose.priority <-  which.min(abs(evaluation - eval(call(this$selectionFunction,evaluation))))[1]      
+  
+  
+  
+  return(choose.priority)
+  
+})
+
+
+
+setMethodS3("randomGeneration","Rule", function(this,instance,...) {
+
+
+this$operationEvaluationFunction <- function(operation){operation$getDuration()}
+ this$selectionFunction <- sample(c("max","min","mean","median"))[1]	  
+
+  
+
+
+})
+

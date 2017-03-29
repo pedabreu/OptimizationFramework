@@ -1,0 +1,6 @@
+Executable = "runJobFeatures.sh";
+StdOutput = "output.out";
+StdError = "error.err";
+InputSandbox = {"input.tar","runJobFeatures.sh","runRScriptFeatures.R"};
+OutputSandbox = {"outputR.Rout","output.out","error.err"};
+Requirements = other.GlueCEUniqueID == "ce06.ncg.ingrid.pt:8443/cream-sge-gridq"; 

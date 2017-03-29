@@ -1,0 +1,387 @@
+
+setConstructorS3("DBConnection",function()
+{
+  extend(Object(),"DBConnection",
+         hostDB = "localhost",
+         userDB = "jss",
+         passwordDB = "jss123user",
+         nameDB = "jss",
+         portDB = 3306,
+         connectionDB = NULL,
+         connectionDriver = dbDriver("MySQL"))
+  
+})
+
+
+
+setMethodS3("disconnectDB","DBConnection", function(this,                                          
+                                               ...) {
+  
+  dbDisconnect(this$connectionDB)  
+  
+})
+
+
+setMethodS3("generateModels","DBConnection", function(this,
+                                                    file="./lib/MySQLInterface/DBModel.R",
+                                                     ...) {
+  con <- this$connectionDB
+  
+  coninfo <- dbGetInfo(con)
+  
+  schemaName <- coninfo$dbname
+  
+  cat("##Automatic \n",file=file)
+  tables <- dbGetQuery(con,"SHOW TABLES")
+  tablesIndex <- paste("Tables_in_",schemaName,sep="")
+  
+  for(tableName in tables[,tablesIndex])
+  {
+  
+    query <- paste("SHOW COLUMNS FROM ",tableName,sep="")
+    sol <- dbGetQuery(con,query)
+    
+    
+    fields <- NULL
+    
+    for(i in 1:nrow(sol))
+    {
+      name <- sol[i,"Field"]
+      type <- "varchar"
+      
+      if(sol[i,"Type"] == "int" | sol[i,"Type"] == "double")
+      {
+        type <- sol[i,"Type"]
+      }
+      
+      fields <- c(fields,
+                  paste("\"",name,"\"=Field(type =\"", type,"\",\n","primaryKey =", sol[i,"Key"] == "PRI",")\n",sep=""))
+      
+    }
+    
+    stg <- paste("setConstructorS3(\"DB",tableName,"\",function()
+    {  
+      extend(DBModel(tableName = \"",tableName,"\",
+                     fields = list(",paste(fields,collapse=","),")
+                     ),\"DB",tableName,"\")  
+    })\n\n",sep="")
+    
+    
+    cat(stg,file=file,append=TRUE)
+    
+  }
+  
+  
+  
+})
+
+
+setMethodS3("simpleConnectDB","DBConnection", function(this,                                          
+                                                     ...) {
+#     con <- dbConnect(this$connectionDriver,
+#                                         host="127.0.0.1",
+#                                         user="pedabreu",
+#                                         password="abreu",
+#                                         dbname="JSS",
+#                                         port=3307)
+    
+
+    con <- dbConnect(this$connectionDriver,
+                     client.flag=CLIENT_MULTI_STATEMENTS,
+                     host = this$hostDB,##"rank.fep.up.pt",
+                     user= this$userDB,##"pedabreu",
+                     password= this$passwordDB,##"abreu",
+                     dbname=this$nameDB,
+                     port=this$portDB)
+    
+    #this$connectionDB <- con
+    return(con)
+
+})
+
+
+
+setMethodS3("populateDB","DBConnection", function(this,...) {
+  
+  this$populateDBInstances()
+  this$populateDBSwapSequences3x3()
+  this$populateDBHeuristicAlgorithms()
+  
+  })
+
+  
+setMethodS3("populateDBInstances","DBConnection", function(this,    
+                                                         nrMachines =  c(3,4),
+                                                         nrJobs =  c(3,4),
+                                                         repetitions= 3,
+                                               ...) {
+
+  con <- this$connectionDB
+  for(nrM in nrMachines)
+  {
+    for(nrJ in nrJobs)
+    {
+      for(rep in 1:repetitions)
+      {
+        inst <- Instance()
+        inst$random.instance(nr.jobs = nrJ,                                                                      
+                             nr.machines = nrM,                                                                      
+                             correlation = "no",                                                                       
+                             same.job.same.dist = FALSE,                                                                      
+                             minDuration = 1,                                                                      
+                             maxDuration = 99,                                                                      
+                             parameter.1.int = c(1,1),                                                                      
+                             parameter.2.int = c(1,1),                                                                       
+                             order.parameter = 99999999999) 
+     
+   
+        inst$DBsave(con)          
+      }
+    }    
+  }
+  
+})
+
+
+setMethodS3("populateDBSwapSequences3x3","DBConnection", function(this,
+                                                             instanceUniqueID = NULL,
+                                                         ...) {
+  con <- this$connectionDB
+  instID <- instanceUniqueID
+  
+  
+  if(is.null(instanceUniqueID))
+  {
+    instObj <- DBInstance()
+    
+    instObj$attributes <- list(nrJobs = 3,
+                                nrMachines = 3)
+    
+    allinst <- instObj$getAllByAttributes(con,
+                                          limit = 1,
+                                          orderby = "RAND()")
+    
+    inst <- allinst[[1]]
+    instID <- inst$attributes[["uniqueID"]]
+    
+  }
+  
+  instance <- Instance()
+  instance$DBgetByUniqueID(list(uniqueID=instID),con)
+  
+  library("combinat")
+  
+  j <- instance$nrJobs()
+  m <- instance$nrMachines()
+  
+  initialSeq <- rep(1:j,m)
+  
+  allSeqPerm<-permn(initialSeq)
+  uniqueAllSeqPerm <- unique(allSeqPerm)
+  
+  ##all permutation possible
+  allperm <- expand.grid(1:length(initialSeq),1:length(initialSeq))
+  
+  ##remove repeated permutation
+  
+  allpermWithoutRepetition <- allperm[allperm[,1] < allperm[,2]  ,] 
+  
+  
+  
+  for(seq in uniqueAllSeqPerm)
+  {
+    
+    #     data <- matrix(seq,nrow=dim(allpermWithoutRepetition)[1],
+    #                    ncol=length(seq),byrow=TRUE)  
+    #     
+    #     
+    #     data <- cbind(as.data.frame(data),allpermWithoutRepetition)
+    
+    seqObj <- Sequence()
+    seqObj$sequence <- seq
+    ## thisSched <- seqObj$getSchedule(instance)
+    
+    ##  seqFitness  <- thisSched$makespan()
+    
+    
+    for(i in 1:dim(allpermWithoutRepetition)[1])
+    {
+      changedSeq <- seq
+      changedSeq[allpermWithoutRepetition[i,1]] <- seq[allpermWithoutRepetition[i,2]] 
+      changedSeq[allpermWithoutRepetition[i,2]] <- seq[allpermWithoutRepetition[i,1]] 
+      
+      if(!all(changedSeq == seq))
+      {   
+        swpSeq <- SwapSequence3x3()
+        
+        swpSeq$sequence <- seqObj
+        swpSeq$instance <- instance
+        swpSeq$index1 <- allpermWithoutRepetition[i,1]
+        swpSeq$index2 <- allpermWithoutRepetition[i,2]
+ 
+        swpSeq$DBsave(con)        
+      }    
+      
+    }
+  }
+  
+  
+  
+  
+})
+
+
+setMethodS3("populateDBSwapSequences2","DBConnection", function(this,
+                                                             instanceUniqueID = NULL,
+                                                             nrJobs = 3,
+                                                             nrMachines = 3,
+                                                             ...) {
+  con <- this$connectionDB
+  instID <- instanceUniqueID
+  
+  
+  if(is.null(instanceUniqueID))
+  {
+    instObj <- DBInstance()
+    
+    instObj$attributes <- list(nrJobs = nrJobs,
+                                nrMachines = nrMachines)
+    
+    allinst <- instObj$getAllByAttributes(con,
+                                          limit = 1,
+                                          orderby = "RAND()")
+    
+    inst <- allinst[[1]]
+    instID <- inst$attributes[["uniqueID"]]
+    
+  }
+  
+  instance <- Instance()
+  instance$DBgetByUniqueID(list(uniqueID=instID),con)
+  
+  library("combinat")
+  
+  j <- instance$nrJobs()
+  m <- instance$nrMachines()
+  
+  initialSeq <- rep(1:j,m)
+  
+  
+  allSeqPerm<-permn(initialSeq)
+  uniqueAllSeqPerm <- unique(allSeqPerm)
+  
+  ##all permutation possible
+  allperm <- expand.grid(1:length(initialSeq),1:length(initialSeq))
+  
+  ##remove repeated permutation
+  
+  allpermWithoutRepetition <- allperm[allperm[,1] < allperm[,2]  ,] 
+  
+  
+  
+  for(seq in uniqueAllSeqPerm)
+  {
+    
+    #     data <- matrix(seq,nrow=dim(allpermWithoutRepetition)[1],
+    #                    ncol=length(seq),byrow=TRUE)  
+    #     
+    #     
+    #     data <- cbind(as.data.frame(data),allpermWithoutRepetition)
+    
+    seqObj <- Sequence()
+    seqObj$sequence <- seq
+    ## thisSched <- seqObj$getSchedule(instance)
+    
+    ##  seqFitness  <- thisSched$makespan()
+    
+    
+    for(i in 1:dim(allpermWithoutRepetition)[1])
+    {
+      changedSeq <- seq
+      changedSeq[allpermWithoutRepetition[i,1]] <- seq[allpermWithoutRepetition[i,2]] 
+      changedSeq[allpermWithoutRepetition[i,2]] <- seq[allpermWithoutRepetition[i,1]] 
+      
+      if(!all(changedSeq == seq))
+      {   
+        swpSeq <- SwapSequence()
+        
+        swpSeq$sequence <- seqObj
+        swpSeq$instance <- instance
+        swpSeq$index1 <- allpermWithoutRepetition[i,1]
+        swpSeq$index2 <- allpermWithoutRepetition[i,2]
+        
+        swpSeq$DBsave(con)        
+      }    
+      
+    }
+  }
+  
+  
+  
+  
+})
+
+setMethodS3("populateDBHeuristicAlgorithms","DBConnection", function(this,
+                                                                   selections = c("max","min"),
+                                                                   evaluations = c("WorkRemaining","OperationsRemaining","ProcessingTime"),
+                                                         ...) {
+  for(sel in selections)
+  {
+    for(evalua in evaluations)
+    {    
+      gtalg <- GifflerThompson(evaluation = evalua,selection=sel)
+     
+      gtalg$DBsave(con)      
+    }    
+  }
+  
+})
+
+
+
+setMethodS3("populateDBGAAlgorithms","DBConnection", function(this,
+                                                            populationSize = c(10,15,30),
+                                                            crossover = list(PLCrossoverC1(),PLCrossoverOX(),
+                                                                             PLCrossoverNabel(),PLCrossoverPedro()),
+                                                            crossoverProb = c(0.3,0.8),
+                                                            mutation = list(PLMutationSW()),
+                                                            mutationProb =  c(0.3,0.8),
+                                                            stopCriterium = MaxNrEvaluatedSolutions(5000),
+                                                            elitistQt = 1,
+                                                            elitistType = "relative",
+                                                            ...) {
+
+
+
+  
+  for(popsize in populationSize)
+  {    
+    for(crossClass in crossover)
+    {    
+      for(crossProb in crossoverProb)
+      {
+        crossClass$probability <- crossProb
+        
+        for(mutClass in mutation )
+        {    
+          for(mutProb in mutationProb)
+          {
+            mutClass$probability <- mutProb
+            
+            gaalg <- GAPL(stopCriterium = stopCriterium,         
+                          population.size = popsize,                                       
+                          crossover = crossClass,
+                          mutation = mutClass,
+                          elitistQuantity = elitistQt,
+                          ## elitistType - can be "relative" if elististQuantity is a percentage or "absolute" the exact number to select
+                          elitistType = elitistType)
+            
+            gaalg$DBsave(con)      
+            
+          }}}}}
+
+
+})
+
+
+  

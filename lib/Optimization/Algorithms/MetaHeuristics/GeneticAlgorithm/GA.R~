@@ -1,0 +1,45 @@
+setConstructorS3("GeneticAlgorithm",function(population.size = 2,
+                                             instance,
+                                             seed = round(runif(1,min=1,max=999999999)),
+                                             chromosomeClass = "Chromosome",
+                                             stopCriterium = StopCriterium(),
+                                             mutation = Mutation(),
+                                             crossover= Crossover())
+           {
+             extend(Algorithm(),"GA",
+                    instance = instance,
+                    population.size = population.size, 
+                    population = Population(),
+                    fitness = list(),
+                    stopCriterium = stopCriterium,
+                    mutation = mutation,
+                    crossover = crossover )
+  
+           }
+           )
+
+
+setMethodS3("run","GA", function(this,...) {
+
+  set.seed(simulation.seed)
+  
+  instance <- this$instance
+  population <- this$population
+  stopCrit <- this$stopCriterium
+
+  population$generateRandomParents(this$population.size)
+  
+  while(stopCrit$continue(population))
+    {
+      population$crossover()
+      population$mutation()
+      population$calculateAllFitness()
+      population$selection()
+      
+      population$increaseGeneration()
+    }
+
+  return population 
+  
+})
+

@@ -1,0 +1,42 @@
+setConstructorS3("PriorityListChromosome",function(instance = NULL)
+           {
+             nrjobs <- instance$nrJobs()
+             extend(JSS(),"PriorityListChromosome",
+                    instance = instance,
+                    cromossoma = array(1:nrjobs,dim=c(nrjobs,instance$nrMachines())),
+                    fitness = NULL)
+  
+           }
+           )
+
+setMethodS3("generateRandom","PriorityListChromosome", function(this,...) {
+  
+  apply(this$cromossoma,2,sample)
+  
+})
+
+setMethodS3("fitness","PriorityListChromosome", function(this,...) {
+  
+  gtHeuristic <- schedule$GTHeuristicPriorityList(this$priorityList)
+  sched <- Schedule()
+  
+  sched$setInstance(this$instance)
+  
+  sched$GT(gtHeuristic)
+
+  fit <- sched$makespan()
+  this$fitness <- fit
+  
+  fit
+  
+})
+
+
+setMethodS3("print","PriorityListChromosome", function(this,...) {
+  
+  print("Chromosome:\n")
+  
+  
+})
+
+

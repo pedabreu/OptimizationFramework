@@ -1,0 +1,25 @@
+setConstructorS3("PriorityList",function(priorityList = NULL)
+           {
+             extend(GTHeuristic(),"GTHeuristicPriorityList",
+                    priorityList = priorityList)
+  
+           }
+           )
+
+setMethodS3("selectOperationIndex","PriorityList", function(this,operations=NULL,schedule = NULL,...) {
+
+  firstOperation <- operations[1]
+  machine <- firstOperation$getMachineID()
+  
+  evaluation <- unlist(lapply(operations,function(x){job <- x$getJobID();this$priorityList[job,machine]}))
+  
+  choose.priority <-  which.min(evaluation)     
+  
+  
+  
+  return(choose.priority)
+  
+})
+
+
+

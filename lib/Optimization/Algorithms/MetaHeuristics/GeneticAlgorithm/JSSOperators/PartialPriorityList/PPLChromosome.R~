@@ -1,0 +1,43 @@
+setConstructorS3("PPLChromosome",function()
+           {
+
+             extend(Chromosome(),"PLChromosome")
+  
+           }
+           )
+
+setMethodS3("generateRandom","PPLChromosome", function(this,instance,...) {
+
+ ## nrjobs <- instance$nrJobs()
+ ## gene <- array(1:nrjobs,dim=c(nrjobs,instance$nrMachines()))
+ ## apply(gene,2,sample)
+  gene <- PartialPriorityList()
+  gene$randomGeneration(instance)
+  
+  this$genes <- gene
+})
+
+setMethodS3("calculateFitness","PLChromosome", function(this,instance,...) {
+
+  sched <- Schedule()
+  sched <- sched$setInstance(instance)
+
+  heuristicPL <-this$gene
+  sched$GT(heuristicPL)
+
+  fit <- sched$makespan()
+  this$fitness <- fit
+  
+  fit
+  
+})
+
+
+setMethodS3("print","PLChromosome", function(this,...) {
+  
+  print("Chromosome:\n")
+  
+  
+})
+
+

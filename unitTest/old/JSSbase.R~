@@ -1,0 +1,35 @@
+library("R.oo")
+library("RMySQL")
+
+rm(list = ls())
+
+sourceDirectory(paste("./lib/Optimization/Problems/JSS/base/",sep=""))
+
+m<-dbDriver("MySQL")
+       
+con <- dbConnect(m,host="localhost",user="root",password="pedrito",dbname="JSS")
+
+inst <- Instance()
+inst$random.instance()
+
+idInst <- inst$DBsetInstance(con)
+
+inst2 <- Instance()
+inst2$DBgetInstance(idInst,con)
+
+inst2$.duration-inst$.duration
+inst2$.duration-inst$.duration
+
+heuristica <- GTHeuristic()
+
+sched <- Schedule()
+sched$setInstance(inst)
+sched$GT(heuristica)
+sched$plotJobsGanttChart()
+
+heuristicaRule <- Rule()
+
+sched1 <- Schedule()
+sched1$setInstance(inst)
+sched1$GT(heuristicaRule)
+sched1$plotJobsGanttChart()

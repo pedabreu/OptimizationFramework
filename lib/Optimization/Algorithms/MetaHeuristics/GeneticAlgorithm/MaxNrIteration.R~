@@ -1,0 +1,22 @@
+setConstructorS3("StopCriterium",function()
+           {
+             extend(GAComponent(),"StopCriterium",
+                    nrMaxIteration)
+  
+           }
+           )
+
+
+
+setMethodS3("maxIterations","StopCriterium", function(this,nrMaxIteration,...) {
+  this$nrMaxIteration <- nrMaxIteration
+})
+
+
+setMethodS3("continue","StopCriterium", function(this,nrIteration,population,...) {
+return nrIteration < this$nrMaxIteration
+})
+
+n)
+})
+

@@ -1,0 +1,32 @@
+\documentclass[a4paper,10pt]{article}
+\usepackage[utf8x]{inputenc}
+
+%opening
+\title{}
+\author{}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+
+\end{abstract}
+
+\section{Features Description}
+
+
+\subsection{Partition 3x3}
+
+\begin{center}
+\begin{tabular}{lll}
+Name   & Type & Description \\ 
+
+\end{tabular}
+ \end{center} 
+
+
+
+
+
+\end{document}

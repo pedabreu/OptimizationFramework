@@ -1,0 +1,19 @@
+library("R.oo")
+##library("RMySQL")
+
+
+rm(list = ls())
+version <- "dev"
+homePath <- paste("./lib/",version,"/Optimization/Problems/JSS/GeneticAlgorithm/PriorityList/",sep="")
+
+source(paste(homePath,"PLChromosome.R",sep=""))
+source(paste(homePath,"PLChromosomeC1.R",sep=""))
+source(paste(homePath,"PLChromosomeNabel.R",sep=""))
+source(paste(homePath,"PLChromosomeOX.R",sep=""))
+source(paste(homePath,"PLChromosomePedro.R",sep=""))
+source(paste(homePath,"PLMutationSW.R",sep=""))
+
+
+package.skeleton("GAPriorityListJSS")
+
+

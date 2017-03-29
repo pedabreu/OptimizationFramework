@@ -1,0 +1,56 @@
+\documentclass[a4paper,10pt]{article}
+\usepackage[utf8x]{inputenc}
+
+%opening
+\title{}
+\author{}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+
+\end{abstract}
+
+\section{Features Description}
+
+
+\subsection{Partition 3x3}
+
+The main line of this group of features is to partition the domain of the operations attributes and count how many operations belonging to that partition is changed in the sequence. The attributes are :
+the work remaining
+ minimum start time
+ the total gaps before the operation in the job
+ the total of gaps after the operation in the job
+
+Each attribute above is normalized, respectely by:
+the total duration of the same job
+the total duration of the same job
+
+
+
+
+
+There two intervals for the features that are normalized: [0,1] and [-1,1]. Each interval is partioned by N parts.
+
+For example: the attribute of Work Remaining for an operation, that is the duration of the operation the follows the current operation in the job. If the interval has 4 partitions then, there are the following features: WorkRemaingInterval1, WorkRemaingInterval2, WorkRemaingInterval3 and WorkRemaingInterval4. 
+
+
+
+ If it is divided by the total duration of the operations in the job the values are between 0 and 1. So if the value is 0.13 then the value is in the first interval ([0,0.25]) then 
+
+
+
+\begin{center}
+\begin{tabular}{lll}
+Name   & Interval & Description \\ 
+
+\end{tabular}
+ \end{center} 
+
+
+
+
+
+\end{document}

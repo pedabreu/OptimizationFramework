@@ -1,0 +1,13 @@
+setConstructorS3("StopCriterium",function()
+           {
+             extend(GAComponent(),"StopCriterium")
+  
+           }
+           )
+
+
+
+setMethodS3("continue","StopCriterium", function(this,nrIteration,population,...) {
+return(FALSE)
+})
+

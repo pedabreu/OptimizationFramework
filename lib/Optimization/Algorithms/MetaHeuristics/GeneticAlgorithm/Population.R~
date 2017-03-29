@@ -1,0 +1,205 @@
+setConstructorS3("Population",function()
+           {
+             extend(GAComponent(),"Population",
+                    chromosomeClass = "Chromosome",
+                    generation = 1,
+                    instance = NULL,
+                    parent = list(),
+                    offspring = list(),
+                    crossoverOperator = Crossover(),
+                    mutationOperator = Mutation(),
+                    orderFunctionFitness = function(x){sort(x,index.return = TRUE)$ix},
+                    elitistQuantity = 1,
+                    ## elitistType - can be "relative" if elististQuantity is a percentage or "absolute" the exact number to select
+                    elitistType = "absolute")
+  
+           })
+
+
+
+
+setMethodS3("orderByFitness","Population", function(this,individuals,...) {
+
+  allfitness <- lapply(individuals,function(x)x$fitness)
+  sortedInd <- eval(call(this$.orderFunctionFitness,allfitness))
+  
+  return(individuals[[sortedInd]])
+})
+
+
+setMethodS3("elitistValue","Population", function(this,...) {
+
+  elitValue <- 1 
+  size <- length(this$parent)+length(this$offspring)
+  
+  if(this$elitistType == "relative")
+    {
+      elitValue <-  this$elitistQuantity*size/100
+
+    }
+
+  if(this$elitistType == "absolute")
+    {
+      elitValue <- min(this$elitistQuantity,size)
+
+    }
+  
+  return(elitValue)
+  
+})
+
+
+
+
+
+
+setMethodS3("parentSize","Population", function(this,nr,...) {
+
+  return(length(this$parent))
+  
+})
+
+setMethodS3("offspringSize","Population", function(this,nr,...) {
+
+  return(length(this$offspring))
+  
+})
+
+
+
+setMethodS3("generateRandomParents","Population", function(this,nr,...) {
+
+  for(i in 1:nr)
+    {      
+      ind <- eval(call(this$chromosomeClass,this$instance))
+      this$parent[[i]] <- ind$generateRandom()
+    }    
+  
+})
+
+setMethodS3("increaseGeneration","Population", function(this,nr,...) {
+
+  this$generation <- this$generation + 1
+  
+})
+
+
+setMethodS3("calculateAllFitness","Population", function(this,instance,...) {
+
+  
+  
+  for(i in 1:length(this$parent))
+    {      
+      ind <- this$parent[[i]]
+      ind$calculateFitness(instance)
+      this$parent[[i]] <- ind
+    }
+
+  for(i in 1:length(this$offspring))
+    {      
+      ind <- this$offspring[[i]]
+      ind$calculateFitness(instance)
+      this$offspring[[i]] <- ind
+    }
+   
+  
+})
+
+setMethodS3("crossover","Population", function(this,...) {
+
+
+  crossoverOperator <- this$crossoverOperator
+  offspring <- list()
+  
+  select.individual.females<-which(runif(this$parentSize())< crossoverOperator$probability)
+
+  
+  if(length(select.individual.females) > 0)
+    {
+      
+      select.individual.lucky.guys<-c()
+      
+      for(female in select.individual.females)
+        {
+          select.individual.lucky.guys<-c(select.individual.lucky.guys,sample(setdiff(1:this$parentSize(),female),1))
+        }
+      
+      for(i in 1:length(select.individual.females))
+        {
+          offspring <- c(offspring,crossoverOperator$run(male,female))
+          
+          
+        }
+      
+    }
+
+  this$offspring <- offspring
+  
+  
+})
+
+
+setMethodS3("mutation","Population", function(this,...) {
+
+
+  mutationOperator <- this$mutationOperator
+  offspring <- this$offspring()
+
+  
+  if(!is.null(offspring))
+    {
+      mutation.pop <- which(runif(length(offspring)) < mutationOperator$probability)
+
+      if(length(mutation.pop)>0)
+        {
+          for(i in mutation.pop)
+            {
+             offspring[[i]] <- mutationOperator$run(offspring[[i]])
+            }
+
+        }
+      
+      
+    }
+  
+
+})
+
+
+
+
+setMethodS3("selection","Population", function(this,...) {
+
+  elitistValue <- this$elitistValue()
+
+  
+  all.pop <- c(this$parent,this$offspring)
+ 
+  orderedPop <- this$orderByFitness(all.pop)
+
+  newpopindex <- orderedPop[1:elitistValue]
+    
+  if(elitistValue < this$parentSize())
+    {
+      for(k in 1:(elitistValue-this$parentSize()))
+        {
+          selected <- sample(orderedPop[elitistValue:this$parentSize()],2)
+          a <- which(selected[1] == orderedPop)
+          b <- which(selected[2] == orderedPop)
+
+          best <- 2
+          
+          if(a < b)
+            {
+              best <- 1
+            }
+          
+          newpopindex[elitistValue + k] <- orderedPop[selected[best]]
+
+        }
+
+
+    }
+
+  this$parent <- all.pop[[newpopindex]]
+})

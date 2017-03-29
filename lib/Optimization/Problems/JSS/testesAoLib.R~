@@ -1,0 +1,39 @@
+library("R.oo")
+library("RMySQL")
+
+rm(list = ls())
+
+source("lib/GTHeuristicAlgorithm.R")
+source("lib/JSS.R")
+source("lib/GTHeuristic.R")
+source("lib/GTHeuristicSimpleRule.R")
+source("lib/Operation.R")
+source("lib/Schedule.R")
+source("lib/Instance.R")
+
+m<-dbDriver("MySQL")
+con <- dbConnect(m,host="localhost",user="root",password="pedrito",dbname="mydb")
+
+inst <- Instance()
+inst$random.instance()
+
+idInst <- inst$DBsetInstance(con)
+
+inst2 <- Instance()
+inst2$DBgetInstance(idInst,con)
+
+inst2$duration-inst$duration
+inst2$duration-inst$duration
+
+
+heuristica <- GTHeuristicSimpleRule()
+gt <-GTHeuristicAlgorithm(inst,heuristica)
+sched <- gt$run()
+sched$plotJobsGanttChart()
+
+
+idSched <- sched$DBsetSchedule(con)
+sched2 <- Schedule()
+sched2$DBgetSchedule(idSched,con)
+
+sched2$operationStartTime-sched$operationStartTime

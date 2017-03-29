@@ -1,0 +1,40 @@
+\documentclass{article}
+
+\begin{document}
+\SweaveOpts{concordance=TRUE}
+
+
+
+
+
+\section{TESTE}
+
+
+<<echo=FALSE>>=
+":- set(classes,[no,yes]).
+% :- set(tree_type,classification).
+:- set(tree_type,class_probability).
+:- set(minpos,10).  % minimum examples in leaf for splitting
+:- set(clauselength,50).
+:- set(lookahead,2).	% to allow lookahead to lteq/2
+:- set(prune_tree,true).
+:- set(confidence,0.25).% pruning conf parameter used by C4.5
+:- set(evalfn,entropy).
+% :- set(evalfn,gini).
+:- set(dependent,2)."
+@
+
+<<fig=TRUE,echo=FALSE>>=
+par(mfrow=c(2,1))
+for(i in 1:2)
+plot(1:10,11:20, main="Scatterplot of wt vs. mpg")
+@
+
+
+<<echo=FALSE>>=
+for(i in 1:2)
+print("sdff")
+@
+
+
+\end{document}

@@ -1,0 +1,20 @@
+setConstructorS3("GTHeuristic",function()
+           {
+             extend(JSS(),"GTHeuristic")
+  
+           }
+           )
+
+setMethodS3("selectOperationIndex","GTHeuristic", function(this,operations = NULL,schedule = NULL,...) {
+  return(1)
+})
+
+
+setMethodS3("randomGeneration","GTHeuristic", function(this,instance,...) {
+
+
+  
+
+
+})
+

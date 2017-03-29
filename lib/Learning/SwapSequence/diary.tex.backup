@@ -1,0 +1,59 @@
+\documentclass[a4paper,10pt]{article}
+\usepackage[utf8x]{inputenc}
+
+%opening
+\title{}
+\author{}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+
+\end{abstract}
+
+\section{25 de Junho de 2012}
+
+\subsection{Smart Swap Genetic Component}
+
+- Ideia de fazer experiencias com instancias 4x4
+
+- Hoje fiz os estudos com as features do grupo "New Sequence Jobs Distribution for Instances 3x3" com excelentes resultados 0.28 de RMSE com treino de 0.8 do dataset (35000)  
+
+- Acrescentei um novo grupo "New Sequence Machines Distribution for Instances 3x3". No fundo é semelhante ao "New Sequence Jobs Distribution for Instances 3x3" mas para as máquinas
+
+- Tive a ideia de partir a nova sequencia formada pelo swap em várias e descrever cada uma delas. Vou usar o método addPartition e criar estas features apartir dos grupos "New Sequence Jobs Distribution for Instances 3x3" e "New Sequence Machines Distribution for Instances 3x3". Assim fico para cada job e cada machine a quantidade que aparece em cada partição da sequencia
+
+
+\subsection{Outros}
+- Tive a ideia de fazer estudos das diferenças de fitness para instancias c a mesma duração (para o PHD)
+
+\section{26 de Junho de 2012}
+
+\subsection{Smart Swap Genetic Component}
+
+-Ideia: Criar um novo target que meça a diferença de horários vistos que é o que uma mutação deve fazer. Uma proposta é a media da difença dos start times a dividir pelos total dos gaps
+
+Reunião com o Carlos
+- Mostrar os resultados comparados do Sandeep e do grupo "New Sequence Jobs Distribution for Instances 3x3". Mencionar que as features de index criadas tem desempenhos semelhantes ao Sandeep
+
+- Testar o do grupo "New Sequence Jobs Distribution for Instances 3x3" com 4x4 ou maior, pois estes descrevem totalmente a nova sequencia apesar de nao terem sido feitos especificamente para isso (min,max e mediana)
+
+-Dizer que tanto para dataset de treino pequenos e grandes os resultados são interessantes apesar de piores. O que pode ser utilizado numa corrida do mm algoritmo
+
+- Continuar a criar features que meçam a nova sequencia.
+
+\subsection{Corenet}
+
+- Vi o Pentaho 4.5  Fora a criaçao dos data sources de forma automatica para DW em estrela, nao parece haver novidades. 
+- Vi uma demo do Saiku 2.3 e não tinha percentagem
+
+
+
+\section{27 de Junho de 2012}
+
+
+
+
+\end{document}
